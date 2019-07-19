@@ -55,12 +55,14 @@ const (
 
 // Config describes behavior for Target
 type Config struct {
-	SyncPeriod time.Duration `yaml:"sync_period"`
+	SyncPeriod          time.Duration `yaml:"sync_period"`
+	TailViaK8sApiServer bool          `yaml:"tailViaK8sApiServer"`
 }
 
 // RegisterFlags register flags.
 func (cfg *Config) RegisterFlags(flags *flag.FlagSet) {
 	flags.DurationVar(&cfg.SyncPeriod, "target.sync-period", 10*time.Second, "Period to resync directories being watched and files being tailed.")
+	flags.BoolVar(&cfg.TailViaK8sApiServer, "target.tailViaK8sApiServer", false, "Use K8s API server to tail instead of tailing on file system")
 }
 
 // FileTarget describes a particular set of logs.
@@ -84,7 +86,7 @@ type FileTarget struct {
 }
 
 // NewFileTarget create a new FileTarget.
-func NewFileTarget(logger log.Logger, handler api.EntryHandler, positions *positions.Positions, path string, labels model.LabelSet, discoveredLabels model.LabelSet, targetConfig *Config) (*FileTarget, error) {
+func NewFileTarget(logger log.Logger, handler api.EntryHandler, positions *positions.Positions, path string, labels model.LabelSet, discoveredLabels model.LabelSet, targetConfig *Config) (FilelikeTarget, error) {
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

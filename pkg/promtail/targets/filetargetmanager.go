@@ -112,7 +112,7 @@ func NewFileTargetManager(
 			log:            logger,
 			positions:      positions,
 			relabelConfig:  cfg.RelabelConfigs,
-			targets:        map[string]*FileTarget{},
+			targets:        map[string]FilelikeTarget{},
 			droppedTargets: []Target{},
 			hostname:       hostname,
 			entryHandler:   pipeline.Wrap(client),
@@ -183,7 +183,7 @@ type targetSyncer struct {
 	hostname     string
 
 	droppedTargets []Target
-	targets        map[string]*FileTarget
+	targets        map[string]FilelikeTarget
 	mtx            sync.Mutex
 
 	relabelConfig []*relabel.Config
@@ -279,8 +279,12 @@ func (s *targetSyncer) sync(groups []*targetgroup.Group) {
 	s.droppedTargets = dropped
 }
 
-func (s *targetSyncer) newTarget(path string, labels model.LabelSet, discoveredLabels model.LabelSet) (*FileTarget, error) {
-	return NewFileTarget(s.log, s.entryHandler, s.positions, path, labels, discoveredLabels, s.targetConfig)
+func (s *targetSyncer) newTarget(path string, labels model.LabelSet, discoveredLabels model.LabelSet) (FilelikeTarget, error) {
+	if !s.targetConfig.TailViaK8sApiServer {
+		return NewFileTarget(s.log, s.entryHandler, s.positions, path, labels, discoveredLabels, s.targetConfig)
+	} else {
+		return NewK8sApiTailerTarget(s.log, s.entryHandler, s.positions, path, labels, discoveredLabels, s.targetConfig)
+	}
 }
 
 func (s *targetSyncer) DroppedTargets() []Target {

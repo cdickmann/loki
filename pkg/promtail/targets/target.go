@@ -16,6 +16,9 @@ const (
 
 	// DroppedTargetType is a target that's been dropped.
 	DroppedTargetType = TargetType("dropped")
+
+	// K8sApiTailerTargetType is a target that streams logs via the K8s API Server
+	K8sApiTailerTargetType = TargetType("K8sApiTailerTargetType")
 )
 
 // Target is a promtail scrape target
@@ -30,6 +33,13 @@ type Target interface {
 	Ready() bool
 	// Details is additional information about this target specific to its type
 	Details() interface{}
+}
+
+type FilelikeTarget interface {
+	Target
+
+	// Stop tailing in the target, usually done ahead of removing the target
+	Stop()
 }
 
 // IsDropped tells if a target has been dropped
